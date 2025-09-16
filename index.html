@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login – Fitts + Doherty (A/B)</title>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --text:#1d2330; --primary:#2563eb; --primaryHover:#1e40af;
+      --muted:#6b7280; --ok:#16a34a; --danger:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text); background:linear-gradient(180deg, #e9eef9, var(--bg));
+      min-height:100svh; display:flex; flex-direction:column; gap:16px;
+    }
+    /* Toolbar */
+    .toolbar{
+      display:flex; gap:8px; padding:12px; justify-content:center; align-items:center;
+      position:sticky; top:0; background:rgba(255,255,255,.8); backdrop-filter: blur(8px); border-bottom:1px solid #e5e7eb;
+    }
+    .toolbar h1{ font-size:16px; margin:0 8px 0 0; color:#111827; }
+    .switch{
+      appearance:none; border:none; border-radius:999px; padding:10px 14px; cursor:pointer; font-weight:600;
+      background:var(--card); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.06), 0 1px 1px rgba(0,0,0,.04);
+    }
+    .switch[aria-pressed="true"]{ background:var(--primary); color:white }
+    .wrap{ flex:1; display:grid; place-items:center; padding:24px }
+    .panel{ width:100%; max-width:380px }
+    .hidden{ display:none }
+
+    /* ===== Versión A: Cumple (Fitts + Doherty) ===== */
+    .good .card{
+      background:var(--card); padding:24px; border-radius:14px;
+      box-shadow:0 10px 25px rgba(37,99,235,.12), 0 2px 8px rgba(0,0,0,.06);
+    }
+    .good h2{ margin:0 0 12px; font-size:22px }
+    .good p.sub{ margin:0 0 16px; color:var(--muted) }
+
+    .good label{ display:block; font-size:14px; margin:8px 0 6px }
+    .good input{
+      width:100%; padding:12px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; outline:none;
+    }
+    .good input:focus{ border-color:var(--primary); box-shadow:0 0 0 4px rgba(37,99,235,.15) }
+
+    .good .actions{ margin-top:12px }
+    .good button.primary{
+      width:100%; padding:14px; font-size:16px; font-weight:700; border:none; border-radius:12px; cursor:pointer;
+      background:var(--primary); color:white;
+    }
+    .good button.primary:hover{ background:var(--primaryHover) }
+    .good .meta{ display:flex; justify-content:space-between; margin-top:8px }
+    .good .meta a{ font-size:14px; color:var(--primary); text-decoration:none }
+    .good .meta a:hover{ text-decoration:underline }
+
+    .good .feedback{ margin-top:10px; font-size:14px; color:var(--muted) }
+    .good .feedback [role="status"]{ display:inline-block; min-height:1.2em }
+
+    /* Touch target extra grande (Fitts) en el pie */
+    .good .footer-cta{
+      margin-top:14px; display:flex; gap:8px;
+    }
+    .good .footer-cta button{
+      flex:1; padding:12px; border-radius:12px; border:1px solid #d1d5db; background:white; cursor:pointer; font-weight:600;
+    }
+    .good .footer-cta button:hover{ border-color:var(--primary); color:var(--primary) }
+
+    /* ===== Versión B: Rompe (Fitts + Doherty) ===== */
+    .bad{
+      filter:saturate(.8);
+    }
+    .bad .card{
+      background:#0b0b0b; color:#767676; padding:14px; border-radius:6px;
+      box-shadow:none; border:1px solid #202020; position:relative;
+    }
+    .bad h2{ font: italic 700 18px "Comic Sans MS", cursive; letter-spacing:2px; margin:0 0 2px; text-transform:uppercase }
+    .bad p.sub{ margin:0 0 14px; color:#686868; font-size:12px }
+    .bad input{
+      width:160px; padding:4px; margin:3px; font-size:12px; border:1px dashed #444; background:#0f0f0f; color:#7a7a7a;
+    }
+    /* Botón diminuto y lejos (rompe Fitts) */
+    .bad .tiny-ok{
+      position:absolute; top:8px; right:8px; /* lejos de los campos */
+      width:56px; height:22px; font-size:10px; line-height:1; border:1px solid #7f0000; background:#a70000; color:#ffe680; cursor:pointer;
+    }
+    /* Poca retroalimentación (rompe Doherty) */
+    .bad .status{ font-size:11px; min-height:1em; color:#6a6a6a; margin-top:8px }
+
+    /* Ayuda visual para la consigna */
+    .badge{
+      display:inline-block; font-size:12px; font-weight:700; padding:4px 8px; border-radius:999px; background:#e5edff; color:#263a8b; margin-bottom:8px;
+    }
+    .badge.badge-red{ background:#ffe5e5; color:#8b2626 }
+  </style>
+</head>
+<body>
+  <!-- Barra para alternar versiones -->
+  <div class="toolbar" role="navigation" aria-label="Cambiar versión">
+    <h1>Fitts + Doherty</h1>
+    <button id="btnGood" class="switch" aria-pressed="true">✅ Versión A (Cumple)</button>
+    <button id="btnBad" class="switch" aria-pressed="false">⚠️ Versión B (Rompe)</button>
+  </div>
+
+  <main class="wrap">
+    <!-- ===== Versión A: Cumple ===== -->
+    <section id="good" class="panel good" aria-labelledby="good-title">
+      <div class="card" role="region" aria-describedby="good-desc">
+        <span class="badge">Cumple Fitts + Doherty</span>
+        <h2 id="good-title">Iniciar sesión</h2>
+        <p id="good-desc" class="sub">Botones grandes, cercanos y feedback &lt; 400ms.</p>
+
+        <label for="user">Usuario</label>
+        <input id="user" name="user" type="text" autocomplete="username" placeholder="tu@email.com" />
+
+        <label for="pass">Contraseña</label>
+        <input id="pass" name="pass" type="password" autocomplete="current-password" placeholder="••••••••" />
+
+        <div class="actions">
+          <button class="primary" id="goodLogin">Entrar</button>
+          <div class="feedback">
+            <strong>Estado:&nbsp;</strong>
+            <span id="goodStatus" role="status" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div class="meta">
+          <a href="#" onclick="event.preventDefault(); announce('Enlace de ayuda');">¿Olvidaste tu contraseña?</a>
+          <a href="#" onclick="event.preventDefault(); announce('Crear cuenta');">Crear cuenta</a>
+        </div>
+
+        <div class="footer-cta">
+          <button onclick="announce('Ingresar con Google')">Ingresar con Google</button>
+          <button onclick="announce('Ingresar con Microsoft')">Ingresar con Microsoft</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Versión B: Rompe ===== -->
+    <section id="bad" class="panel bad hidden" aria-labelledby="bad-title">
+      <div class="card" role="region" aria-describedby="bad-desc">
+        <span class="badge badge-red">Rompe Fitts + Doherty</span>
+        <h2 id="bad-title">LOGIN</h2>
+        <p id="bad-desc" class="sub">Botón chico y lejos, sin feedback (retardo &gt; 3s).</p>
+
+        <!-- Campos sin etiquetas y con poco contraste (anti-accesible) -->
+        <input type="text" placeholder="Usr" />
+        <input type="password" placeholder="Pwd" />
+
+        <!-- Botón diminuto y alejado de los campos -->
+        <button class="tiny-ok" id="badLogin">OK</button>
+
+        <div class="status" id="badStatus"><!-- casi vacío a propósito --></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ------- Alternar paneles (A/B) -------
+    const good = document.getElementById('good');
+    const bad = document.getElementById('bad');
+    const btnGood = document.getElementById('btnGood');
+    const btnBad = document.getElementById('btnBad');
+
+    function showPanel(which){
+      const isGood = which === 'good';
+      good.classList.toggle('hidden', !isGood);
+      bad.classList.toggle('hidden',  isGood);
+      btnGood.setAttribute('aria-pressed', String(isGood));
+      btnBad.setAttribute('aria-pressed', String(!isGood));
+      // En la versión buena, enfocar el primer campo (mejor flujo)
+      if(isGood){
+        setTimeout(()=> document.getElementById('user')?.focus(), 0);
+      }
+    }
+
+    btnGood.addEventListener('click', ()=> showPanel('good'));
+    btnBad.addEventListener('click',  ()=> showPanel('bad'));
+
+    // ------- Umbral de Doherty: feedback < 400ms en A -------
+    const goodBtn = document.getElementById('goodLogin');
+    const goodStatus = document.getElementById('goodStatus');
+
+    goodBtn.addEventListener('click', ()=>{
+      goodStatus.textContent = 'Procesando…';              // feedback inmediato
+      const start = performance.now();
+      setTimeout(()=>{
+        const elapsed = Math.round(performance.now() - start);
+        goodStatus.textContent = `✅ Bienvenido (respuesta en ${elapsed} ms)`;
+        // limpiar estado luego de un ratito
+        setTimeout(()=> goodStatus.textContent = '', 1200);
+      }, 300); // < 400ms (Doherty)
+    });
+
+    // ------- Rompe Doherty en B: retardo > 3000ms sin feedback -------
+    const badBtn = document.getElementById('badLogin');
+    const badStatus = document.getElementById('badStatus');
+
+    badBtn.addEventListener('click', ()=>{
+      // No mostramos estado por varios segundos (mala práctica)
+      setTimeout(()=>{
+        badStatus.textContent = 'bienvenido? (tarde)';
+        // ni siquiera limpiamos el estado (más confusión)
+      }, 3000); // muy por encima del umbral de ~400ms
+    });
+
+    // Utilidad para demos
+    function announce(msg){
+      alert(msg);
+    }
+  </script>
+</body>
+</html>
